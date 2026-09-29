@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Administrator — Registrations</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="sheet sheet--wide">
+    <div class="letterhead">
+      <div>
+        <h1>Registrations Register</h1>
+        <p>All student event registrations and uploaded ID cards</p>
+      </div>
+      <div class="seal">DEPT<br>OF&nbsp;IT</div>
+    </div>
+
+    <div class="filters">
+      <div class="field">
+        <label>Search by register no.</label>
+        <input type="text" id="searchReg" placeholder="e.g. 23IT105">
+      </div>
+      <div class="field">
+        <label>Filter by event</label>
+        <select id="filterEvent"><option value="">All events</option></select>
+      </div>
+      <button onclick="loadRegistrations()">Search</button>
+      <button onclick="clearFilters()" style="background:transparent;color:var(--ink-soft);border:1px solid var(--ink-soft);">Clear</button>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Reg No.</th>
+          <th>Student</th>
+          <th>Department</th>
+          <th>Year</th>
+          <th>Event</th>
+          <th>ID Card</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="regTable"></tbody>
+    </table>
+  </div>
+
+  <script>
+    async function loadEventFilterOptions() {
+      const res = await fetch("/api/events");
+      const events = await res.json();
+      const select = document.getElementById("filterEvent");
+      events.forEach((ev) => {
+        const opt = document.createElement("option");
+        opt.value = ev.eventName;
+        opt.textContent = ev.eventName;
+        select.appendChild(opt);
+      });
+    }
+
+    async function loadRegistrations() {
+      const registerNo = document.getElementById("searchReg").value;
+      const eventName = document.getElementById("filterEvent").value;
+
+      const params = new URLSearchParams();
+      if (registerNo) params.append("registerNo", registerNo);
+      if (eventName) params.append("eventName", eventName);
+
+      const res = await fetch("/api/registrations?" + params.toString());
+      const data = await res.json();
+
+      const tbody = document.getElementById("regTable");
+      tbody.innerHTML = "";
+
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="color:var(--ink-soft);">No registrations found.</td></tr>';
+        return;
+      }
+
+      data.forEach((r) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${r.registerNo}</td>
+          <td>${r.studentName}</td>
+          <td>${r.department}</td>
+          <td>${r.year}</td>
+          <td>${r.eventName}</td>
+          <td><a class="view-link" href="/${r.idCard}" target="_blank">View ID</a></td>
+          <td><button class="strike-btn" onclick="deleteRegistration('${r._id}')">delete</button></td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function clearFilters() {
+      document.getElementById("searchReg").value = "";
+      document.getElementById("filterEvent").value = "";
+      loadRegistrations();
+    }
+
+    async function deleteRegistration(id) {
+      await fetch("/api/registrations/" + id, { method: "DELETE" });
+      loadRegistrations();
+    }
+
+    loadEventFilterOptions();
+    loadRegistrations();
+  </script>
+</body>
+</html>

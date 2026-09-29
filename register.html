@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Event Registration</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="sheet">
+    <div class="letterhead">
+      <div>
+        <h1>Event Registration</h1>
+        <p>Fill in your details and attach your student ID card</p>
+      </div>
+      <div class="seal">DEPT<br>OF&nbsp;IT</div>
+    </div>
+
+    <form id="regForm" enctype="multipart/form-data">
+      <div class="field">
+        <label>Student name</label>
+        <input type="text" name="studentName" required>
+      </div>
+
+      <div class="field">
+        <label>Register number</label>
+        <input type="text" name="registerNo" required>
+      </div>
+
+      <div class="field">
+        <label>Email</label>
+        <input type="email" name="email" required>
+      </div>
+
+      <div class="field">
+        <label>Department</label>
+        <select name="department" required>
+          <option value="">Select department</option>
+          <option>Information Technology</option>
+          <option>Computer Science</option>
+          <option>Electronics and Communication</option>
+          <option>Mechanical</option>
+          <option>Civil</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Year</label>
+        <select name="year" required>
+          <option value="">Select year</option>
+          <option value="1">I</option>
+          <option value="2">II</option>
+          <option value="3">III</option>
+          <option value="4">IV</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Event</label>
+        <select name="eventName" id="eventName" required></select>
+      </div>
+
+      <div class="field">
+        <label>Event type</label>
+        <div class="radio-row" id="eventTypeRow">
+          <label><input type="radio" name="eventType" value="Technical" required> Technical</label>
+          <label><input type="radio" name="eventType" value="Cultural"> Cultural</label>
+          <label><input type="radio" name="eventType" value="Sports"> Sports</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Student ID card (.jpg, .jpeg, .png, .pdf — max 2MB)</label>
+        <input type="file" name="idCard" accept=".jpg,.jpeg,.png,.pdf" required>
+      </div>
+
+      <button type="submit">Register</button>
+      <p class="msg" id="msg"></p>
+    </form>
+
+    <a class="footlink" href="events.html">← Back to events</a>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const preselectedEvent = params.get("event");
+    const preselectedType = params.get("type");
+
+    async function loadEventOptions() {
+      const res = await fetch("/api/events");
+      const events = await res.json();
+      const select = document.getElementById("eventName");
+      select.innerHTML = "";
+
+      events.forEach((ev) => {
+        const opt = document.createElement("option");
+        opt.value = ev.eventName;
+        opt.textContent = `${ev.eventName} (${ev.eventType})`;
+        opt.dataset.type = ev.eventType;
+        if (preselectedEvent && ev.eventName === preselectedEvent) opt.selected = true;
+        select.appendChild(opt);
+      });
+
+      syncEventType();
+    }
+
+    function syncEventType() {
+      const select = document.getElementById("eventName");
+      const chosen = select.options[select.selectedIndex];
+      const type = (chosen && chosen.dataset.type) || preselectedType;
+      if (type) {
+        const radio = document.querySelector(`input[name="eventType"][value="${type}"]`);
+        if (radio) radio.checked = true;
+      }
+    }
+
+    document.getElementById("eventName").addEventListener("change", syncEventType);
+
+    document.getElementById("regForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+
+      const res = await fetch("/register", { method: "POST", body: formData });
+      const result = await res.json();
+      const msg = document.getElementById("msg");
+
+      if (result.message) {
+        msg.style.color = "var(--approve)";
+        msg.textContent = result.message + " — redirecting to events…";
+        setTimeout(() => (window.location.href = "events.html"), 1500);
+      } else {
+        msg.style.color = "var(--pen-red)";
+        msg.textContent = result.error || "Registration failed";
+      }
+    });
+
+    loadEventOptions();
+  </script>
+</body>
+</html>

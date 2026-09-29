@@ -1,0 +1,15 @@
+{
+  "name": "college-event-app",
+  "version": "1.0.0",
+  "description": "College Event Registration System with Student ID Card Upload",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "seed": "node seed.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "mongoose": "^8.5.0",
+    "multer": "^1.4.5-lts.1"
+  }
+}

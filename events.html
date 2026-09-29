@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Upcoming Events</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="sheet sheet--wide">
+    <div class="letterhead">
+      <div>
+        <h1>Upcoming Events</h1>
+        <p>Tap Register Now on any event to reserve your spot</p>
+      </div>
+      <div class="seal">DEPT<br>OF&nbsp;IT</div>
+    </div>
+
+    <div id="eventList"></div>
+
+    <a class="footlink" href="index.html">← Back home</a>
+  </div>
+
+  <script>
+    async function loadEvents() {
+      const res = await fetch("/api/events");
+      const events = await res.json();
+      const list = document.getElementById("eventList");
+      list.innerHTML = "";
+
+      if (events.length === 0) {
+        list.innerHTML = '<p style="font-family:\'Courier Prime\',monospace;color:var(--ink-soft);">No events published yet.</p>';
+        return;
+      }
+
+      events.forEach((ev) => {
+        const pct = Math.min(100, Math.round((ev.registeredCount / ev.maxParticipants) * 100));
+        const full = ev.registeredCount >= ev.maxParticipants;
+        const div = document.createElement("div");
+        div.className = "ticket";
+        div.innerHTML = `
+          <div class="ticket-main">
+            <span class="badge">${ev.eventType}</span>
+            <p class="ticket-name">${ev.eventName}</p>
+            <p class="ticket-meta">${ev.venue} · ${ev.eventDate}</p>
+            <p class="ticket-meta">${ev.registeredCount} / ${ev.maxParticipants} registered</p>
+            <div class="progress"><div class="progress-fill" style="width:${pct}%"></div></div>
+          </div>
+          <div class="ticket-stub">
+            <span class="ticket-meta">Admit One</span>
+            ${
+              full
+                ? `<span style="font-family:'Courier Prime',monospace;color:var(--pen-red);font-size:0.85rem;">FULL</span>`
+                : `<a class="btn" style="text-decoration:none;" href="register.html?event=${encodeURIComponent(ev.eventName)}&type=${encodeURIComponent(ev.eventType)}">Register Now</a>`
+            }
+          </div>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    loadEvents();
+  </script>
+</body>
+</html>
